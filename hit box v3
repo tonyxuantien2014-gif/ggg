@@ -1,0 +1,252 @@
+-- [[ HITBOX ULTIMATE CONTROLLER V8 - CORE REBORN ]] --
+-- Ép giao diện vào phân vùng tối cao chống bị game xóa, khóa cứng hitbox toàn server
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Cấu hình lưu trữ
+_G.HeadSize = 20
+_G.HitboxTransparency = 0.7
+_G.Disabled = false
+
+-- =========================================================
+-- [ KHỬ TRÙNG LẶP UI ]: Xóa sạch triệt để mọi tàn dư cũ
+-- =========================================================
+local uiName = "HitboxCoreBypassSuiteV8"
+
+local function cleanOldUI(parent)
+    if parent and parent:FindFirstChild(uiName) then
+        pcall(function() parent[uiName]:Destroy() end)
+    end
+end
+
+cleanOldUI(CoreGui)
+cleanOldUI(LocalPlayer:FindFirstChild("PlayerGui"))
+if game:GetService("GuiService") and game:GetService("GuiService"):FindFirstChild("RobloxGui") then
+    cleanOldUI(game:GetService("GuiService").RobloxGui)
+end
+-- =========================================================
+
+-- [[ KHỞI TẠO FRAME CHÍNH TRÊN PHÂN VÙNG TỐI CAO CHỐNG XÓA ]]
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = uiName
+ScreenGui.ResetOnSpawn = false
+
+-- Thuật toán dò tìm phân vùng an toàn nhất của Executor để hiển thị đè lên game
+local uiParent = nil
+local successCore = pcall(function() uiParent = CoreGui end)
+if not successCore or not uiParent then
+    local successRoblox = pcall(function() uiParent = game:GetService("GuiService").RobloxGui end)
+    if not successRoblox or not uiParent then
+        uiParent = LocalPlayer:WaitForChild("PlayerGui", 10)
+    end
+end
+ScreenGui.Parent = uiParent
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 220)
+MainFrame.Position = UDim2.new(0.5, -150, 0.4, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Thanh Tiêu Đề
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+Title.Text = "⚡ HITBOX TOTAL LOCK V8"
+Title.TextColor3 = Color3.fromRGB(255, 170, 0)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.Parent = MainFrame
+local tc = Instance.new("UICorner")
+tc.CornerRadius = UDim.new(0, 10)
+tc.Parent = Title
+
+-- Nút Thu Nhỏ / Ẩn UI Nhanh
+local ToggleMenuBtn = Instance.new("TextButton")
+ToggleMenuBtn.Size = UDim2.new(0, 80, 0, 30)
+ToggleMenuBtn.Position = UDim2.new(0, 10, 0, 10)
+ToggleMenuBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+ToggleMenuBtn.Text = "Ẩn/Hiện UI"
+ToggleMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleMenuBtn.Font = Enum.Font.GothamBold
+ToggleMenuBtn.TextSize = 11
+ToggleMenuBtn.Parent = ScreenGui
+local bc = Instance.new("UICorner")
+bc.CornerRadius = UDim.new(0, 6)
+bc.Parent = ToggleMenuBtn
+ToggleMenuBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+
+-- [[ ĐỊNH VỊ CÁC KHUNG CHỨC NĂNG ]]
+
+-- 1. Nút Bật/Tắt Mở Rộng Hitbox (Tọa độ Y = 60)
+local ToggleFrame = Instance.new("Frame")
+ToggleFrame.Size = UDim2.new(1, -20, 0, 40)
+ToggleFrame.Position = UDim2.new(0, 10, 0, 60)
+ToggleFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+ToggleFrame.Parent = MainFrame
+local c1 = Instance.new("UICorner") c1.CornerRadius = UDim.new(0, 6) c1.Parent = ToggleFrame
+
+local ToggleLabel = Instance.new("TextLabel")
+ToggleLabel.Size = UDim2.new(0.65, 0, 1, 0)
+ToggleLabel.Position = UDim2.new(0, 10, 0, 0)
+ToggleLabel.BackgroundTransparency = 1
+ToggleLabel.Text = "Kích hoạt Hitbox"
+ToggleLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+ToggleLabel.Font = Enum.Font.GothamSemibold
+ToggleLabel.TextSize = 12
+ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+ToggleLabel.Parent = ToggleFrame
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 60, 0, 26)
+ToggleBtn.Position = UDim2.new(1, -70, 0.5, -13)
+ToggleBtn.BackgroundColor3 = _G.Disabled and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(180, 50, 50)
+ToggleBtn.Text = _G.Disabled and "BẬT" or "TẮT"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 11
+ToggleBtn.Parent = ToggleFrame
+local c2 = Instance.new("UICorner") c2.CornerRadius = UDim.new(0, 4) c2.Parent = ToggleBtn
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    _G.Disabled = not _G.Disabled
+    ToggleBtn.Text = _G.Disabled and "BẬT" or "TẮT"
+    ToggleBtn.BackgroundColor3 = _G.Disabled and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(180, 50, 50)
+    
+    if not _G.Disabled then
+        -- Reset kích thước gốc về mặc định ngay khi TẮT cho toàn server
+        for _, v in ipairs(Players:GetPlayers()) do
+            if v.Character then
+                local root = v.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    pcall(function()
+                        root.Size = Vector3.new(2, 2, 1)
+                        root.Transparency = 1
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+-- 2. Ô nhập kích thước (Tọa độ Y = 110)
+local SizeFrame = Instance.new("Frame")
+SizeFrame.Size = UDim2.new(1, -20, 0, 40)
+SizeFrame.Position = UDim2.new(0, 10, 0, 110)
+SizeFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+SizeFrame.Parent = MainFrame
+local c3 = Instance.new("UICorner") c3.CornerRadius = UDim.new(0, 6) c3.Parent = SizeFrame
+
+local SizeLabel = Instance.new("TextLabel")
+SizeLabel.Size = UDim2.new(0.6, 0, 1, 0)
+SizeLabel.Position = UDim2.new(0, 10, 0, 0)
+SizeLabel.BackgroundTransparency = 1
+SizeLabel.Text = "Kích thước Hitbox"
+SizeLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+SizeLabel.Font = Enum.Font.GothamSemibold
+SizeLabel.TextSize = 12
+SizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+SizeLabel.Parent = SizeFrame
+
+local SizeTextBox = Instance.new("TextBox")
+SizeTextBox.Size = UDim2.new(0, 70, 0, 26)
+SizeTextBox.Position = UDim2.new(1, -80, 0.5, -13)
+SizeTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+SizeTextBox.Text = tostring(_G.HeadSize)
+SizeTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SizeTextBox.Font = Enum.Font.GothamBold
+SizeTextBox.TextSize = 12
+SizeTextBox.ClearTextOnFocus = false
+SizeTextBox.Parent = SizeFrame
+local c4 = Instance.new("UICorner") c4.CornerRadius = UDim.new(0, 4) c4.Parent = SizeTextBox
+SizeTextBox.FocusLost:Connect(function()
+    local num = tonumber(SizeTextBox.Text)
+    if num then _G.HeadSize = num else SizeTextBox.Text = tostring(_G.HeadSize) end
+end)
+
+-- 3. Ô nhập độ trong suốt (Tọa độ Y = 160)
+local TransFrame = Instance.new("Frame")
+TransFrame.Size = UDim2.new(1, -20, 0, 40)
+TransFrame.Position = UDim2.new(0, 10, 0, 160)
+TransFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+TransFrame.Parent = MainFrame
+local c5 = Instance.new("UICorner") c5.CornerRadius = UDim.new(0, 6) c5.Parent = TransFrame
+
+local TransLabel = Instance.new("TextLabel")
+TransLabel.Size = UDim2.new(0.6, 0, 1, 0)
+TransLabel.Position = UDim2.new(0, 10, 0, 0)
+TransLabel.BackgroundTransparency = 1
+TransLabel.Text = "Độ trong suốt (Mức 0 -> 1)"
+TransLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+TransLabel.Font = Enum.Font.GothamSemibold
+TransLabel.TextSize = 12
+TransLabel.TextXAlignment = Enum.TextXAlignment.Left
+TransLabel.Parent = TransFrame
+
+local TransTextBox = Instance.new("TextBox")
+TransTextBox.Size = UDim2.new(0, 70, 0, 26)
+TransTextBox.Position = UDim2.new(1, -80, 0.5, -13)
+TransTextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+TransTextBox.Text = tostring(_G.HitboxTransparency)
+TransTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TransTextBox.Font = Enum.Font.GothamBold
+TransTextBox.TextSize = 12
+TransTextBox.ClearTextOnFocus = false
+TransTextBox.Parent = TransFrame
+local c6 = Instance.new("UICorner") c6.CornerRadius = UDim.new(0, 4) c6.Parent = TransTextBox
+TransTextBox.FocusLost:Connect(function()
+    local num = tonumber(TransTextBox.Text)
+    if num then
+        if num < 0 then num = 0 elseif num > 1 then num = 1 end
+        _G.HitboxTransparency = num
+        TransTextBox.Text = tostring(num)
+    else
+        TransTextBox.Text = tostring(_G.HitboxTransparency)
+    end
+end)
+
+-- [[ ENGINE KHÓA CỨNG HITBOX TOÀN BỘ SERVER CHỐNG RESET ]]
+local connection
+connection = RunService.RenderStepped:Connect(function()
+    -- Nếu UI bị xóa ngầm, tự động dừng vòng lặp cũ để tránh lag
+    if not ScreenGui or not ScreenGui.Parent then
+        connection:Disconnect()
+        return
+    end
+
+    if _G.Disabled then
+        local currentTargetSize = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
+        
+        -- Áp đặt thông số lên TOÀN BỘ NGƯỜI CHƠI trong phòng (không lọc đội, không sót ai)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local root = player.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    pcall(function()
+                        root.CanCollide = false
+                        root.Material = Enum.Material.Neon
+                        root.BrickColor = BrickColor.new("Really blue")
+                        
+                        if root.Size ~= currentTargetSize then
+                            root.Size = currentTargetSize
+                        end
+                        if root.Transparency ~= _G.HitboxTransparency then
+                            root.Transparency = _G.HitboxTransparency
+                        end
+                    end)
+                end
+            end
+        end
+    end
+end)
